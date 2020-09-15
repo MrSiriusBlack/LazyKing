@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class LazyKing {
     private static List<String> pollResults = new LinkedList<>();
@@ -35,9 +36,7 @@ class UnluckyVassal {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        for (Person patrial: patrials)
-            writeReportToFile(patrial, path, 1);
+        writeReportToFile(patrials.stream().filter(p -> p.master == null).collect(Collectors.toCollection(TreeSet::new)), path, 1);
     }
 
     private Set<Person> fillPatrials(List<String> pollResults) {
@@ -52,27 +51,28 @@ class UnluckyVassal {
                     Person slavePerson = checkPatrial(slave.trim(), patrials);
                     slavePerson.master = masterPerson;
                     masterPerson.slaves.add(slavePerson);
+                    patrials.add(slavePerson);
                 }
             }
             patrials.add(masterPerson);
         }
-
         return patrials;
     }
 
     private Person checkPatrial(final String patrialName, Set<Person> patrials) {
-        return patrials.stream().filter(p -> Objects.equals(p, new Person(patrialName))).findFirst().orElse(new Person(patrialName));
+        return patrials.stream().filter(p -> p.equals(new Person(patrialName))).findFirst().orElse(new Person(patrialName));
     }
 
-    private void writeReportToFile(Person person, Path path, int level) {
-        try {
-            Files.writeString(path, nameWithTabs(person.name, level), StandardOpenOption.APPEND);
-        } catch (Exception e) {
-            e.printStackTrace();
+    private void writeReportToFile(Set<Person> patrials, Path path, int level) {
+        for (Person person : patrials) {
+            try {
+                Files.writeString(path, nameWithTabs(person.name, level), StandardOpenOption.APPEND);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (!person.slaves.isEmpty())
+                writeReportToFile(person.slaves, path, level + 1);
         }
-        if (!person.slaves.isEmpty())
-            for (Person slave : person.slaves)
-                writeReportToFile(slave, path, level + 1);
     }
 
     private String nameWithTabs(String name, int tabs) {
