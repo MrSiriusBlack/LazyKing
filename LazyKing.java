@@ -1,5 +1,6 @@
 package su.itline;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,7 +11,7 @@ import java.util.stream.Collectors;
 public class LazyKing {
     private static List<String> pollResults = new LinkedList<>();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 	// write your code here
         // Заполняем список из файла, переданного в параметре
         fillPollResults(args[0]);
@@ -18,24 +19,16 @@ public class LazyKing {
         unluckyVassal.printReportForKing(pollResults);
     }
 
-    private static void fillPollResults(String filename) {
-        try {
-            pollResults = Files.readAllLines(Paths.get(filename));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private static void fillPollResults(String filename) throws IOException{
+        pollResults = Files.readAllLines(Paths.get(filename));
     }
 }
 
 class UnluckyVassal {
-    public void printReportForKing(List<String> pollResults) {
+    public void printReportForKing(List<String> pollResults) throws IOException {
         Set<Person> patrials = fillPatrials(pollResults);
         Path path = Paths.get("output.txt");
-        try {
-            Files.writeString(path, "король\n", StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Files.writeString(path, "король\n", StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
         writeReportToFile(patrials.stream().filter(p -> p.master == null).collect(Collectors.toCollection(TreeSet::new)), path, 1);
     }
 
@@ -63,13 +56,9 @@ class UnluckyVassal {
         return patrials.stream().filter(p -> p.equals(new Person(patrialName))).findFirst().orElse(new Person(patrialName));
     }
 
-    private void writeReportToFile(Set<Person> patrials, Path path, int level) {
+    private void writeReportToFile(Set<Person> patrials, Path path, int level) throws IOException{
         for (Person person : patrials) {
-            try {
-                Files.writeString(path, nameWithTabs(person.name, level), StandardOpenOption.APPEND);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            Files.writeString(path, nameWithTabs(person.name, level), StandardOpenOption.APPEND);
             if (!person.slaves.isEmpty())
                 writeReportToFile(person.slaves, path, level + 1);
         }
